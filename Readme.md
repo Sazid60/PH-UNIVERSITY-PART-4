@@ -46,3 +46,31 @@
 ![alt text](<WhatsApp Image 2024-12-06 at 11.06.52_2695731d.jpg>)
 
 - for production we will not give the stack
+
+## 14-2 Understanding Error Patterns in Zod and Mongoose
+
+- ZodError is a subclass of Error; you can create your own instance easily:
+- To checking class or instance we have to use instanceof operator
+
+```ts
+type TErrorSource = {
+  path: string | number;
+  message: string;
+}[];
+
+let errorSource: TErrorSource = [
+  {
+    path: '',
+    message: 'Something Went Wrong',
+  },
+];
+
+// ZodError is a subclass of Error; you can create your own instance easily
+// To checking class or instance we have to use instanceof operator
+if (err instanceof ZodError) {
+  statusCode = 400;
+  message = 'Ami Zod Error';
+}
+```
+
+[ZOD ERROR HANDLING](https://zod.dev/ERROR_HANDLINGhttps://zod.dev/ERROR_HANDLING)
