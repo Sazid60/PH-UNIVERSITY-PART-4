@@ -115,7 +115,7 @@ const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
     const statusCode = 400;
     return {
       statusCode,
-      message: 'Zod Validation Error',
+      message: 'Validation Error',
       errorSources,
     };
   };
@@ -153,4 +153,34 @@ path:'',
 message:'',
 ]
 stack*/
+```
+
+## 14-4 How to convert mongoose validation error
+
+- Mongoose isa The First Layer and Zod is on Top Of Mongoose
+- Practically zod will handle most of the errors a fewer time will be handled by mongoose
+
+```ts
+import mongoose from 'mongoose';
+import { TErrorSources } from '../interface/error';
+
+const handleValidationError = (err: mongoose.Error.ValidationError) => {
+  const errorSources: TErrorSources = Object.values(err.errors).map(
+    (val: mongoose.Error.ValidatorError | mongoose.Error.CastError) => {
+      return {
+        path: val?.path,
+        message: val?.message,
+      };
+    },
+  );
+
+  const statusCode = 400;
+  return {
+    statusCode,
+    message: 'Zod Validation Error',
+    errorSources,
+  };
+};
+
+export default handleValidationError;
 ```
