@@ -184,3 +184,66 @@ const handleValidationError = (err: mongoose.Error.ValidationError) => {
 
 export default handleValidationError;
 ```
+
+## 14-5 How to handle castError and 11000 error
+
+- Validating Error Response Type
+
+```ts
+import mongoose from 'mongoose';
+import { TErrorSources } from '../interface/error';
+
+type TGenericErrorResponse = {
+  statusCode: number;
+  message: string;
+  errorSources: TErrorSources;
+};
+
+const handleValidationError = (
+  err: mongoose.Error.ValidationError,
+): TGenericErrorResponse => {
+  const errorSources: TErrorSources = Object.values(err.errors).map(
+    (val: mongoose.Error.ValidatorError | mongoose.Error.CastError) => {
+      return {
+        path: val?.path,
+        message: val?.message,
+      };
+    },
+  );
+
+  const statusCode = 400;
+  return {
+    statusCode,
+    message: 'Mongoose Validation Error',
+    errorSources,
+  };
+};
+
+export default handleValidationError;
+```
+
+- Handling cast error means It will handle invalid id error
+
+```ts
+import mongoose from 'mongoose';
+import { TErrorSources, TGenericErrorResponse } from '../interface/error';
+
+const handleCastError = (
+  err: mongoose.Error.CastError,
+): TGenericErrorResponse => {
+  const errorSources: TErrorSources = [
+    {
+      path: err.path,
+      message: err.message,
+    },
+  ];
+  const statusCode = 400;
+  return {
+    statusCode,
+    message: 'Invalid Id',
+    errorSources,
+  };
+};
+
+export default handleCastError;
+```

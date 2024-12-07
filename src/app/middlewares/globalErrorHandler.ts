@@ -7,6 +7,7 @@ import { TErrorSources } from '../interface/error';
 import config from '../config';
 import handleZodError from '../errors/handleZodError';
 import handleValidationError from '../errors/handleValidationError';
+import handleCastError from '../errors/handleCastError';
 
 // global error handler
 const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
@@ -38,6 +39,11 @@ const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
     //  this block detects mongoose error
     // console.log('Ami Mongoose er Validation Error');
     const simplifiedError = handleValidationError(err);
+    statusCode = simplifiedError?.statusCode;
+    message = simplifiedError?.message;
+    errorSources = simplifiedError?.errorSources;
+  } else if (err?.name === 'CastError') {
+    const simplifiedError = handleCastError(err);
     statusCode = simplifiedError?.statusCode;
     message = simplifiedError?.message;
     errorSources = simplifiedError?.errorSources;
