@@ -273,3 +273,99 @@ const handleDuplicateError = (err: any): TGenericErrorResponse => {
 
 export default handleDuplicateError;
 ```
+
+## 14-6 How to handle Error, AppError, UnhandledRejection, UncaughtException
+
+- In Some Part we have used throw new Error now its time to handle this error
+
+```ts
+else if (err instanceof AppError) {
+    statusCode = err?.statusCode;
+    message = err?.message;
+    errorSources = [
+      {
+        path: '',
+        message: err?.message,
+      },
+    ];
+  } else if (err instanceof Error) {
+    message = err?.message;
+    errorSources = [
+      {
+        path: '',
+        message: err?.message,
+      },
+    ];
+  }
+```
+
+#### uncaughtException
+
+- Node.js is a process. To stop the process we have to use process.exit(1) if we we get and error in synchronous code.
+
+#### unhandledRejection
+
+- if we get from asynchronous way we have to try this way to stop
+
+```ts
+server.close(() => {
+  process.exit(1);
+});
+```
+
+- it means politely turning off like it lets all works to be closed and the turn off
+
+![alt text](image-2.png)
+
+- we will not do these in globalErrorHandler since it just handles error of express application
+
+- For checking unhandledRejection() an uncaught
+
+```ts
+const test = (req: Request, res: Response) => {
+  // Promise.reject() //for checking unhandledRejection
+  res.send('Server is running');
+};
+
+app.get('/', test);
+```
+
+```ts
+import mongoose from 'mongoose';
+import app from './app';
+import config from './app/config';
+import { Server } from 'http';
+
+let server: Server;
+async function main() {
+  try {
+    await mongoose.connect(config.database_url as string);
+
+    server = app.listen(config.port, () => {
+      console.log(`Example app listening on port ${config.port}`);
+    });
+  } catch (err) {
+    console.log(err);
+  }
+}
+
+main();
+
+// vodro vabe thamabe (For unhandled Rejection)
+process.on('unhandledRejection', () => {
+  console.log(`unhandled rejection is detected, shutting Down`);
+  if (server) {
+    server.close(() => {
+      process.exit(1);
+    });
+  }
+  process.exit(1);
+});
+
+process.on('uncaughtException', () => {
+  console.log(`unhandled rejection is detected, shutting Down`);
+  process.exit(1);
+});
+
+// console.log(x);
+```
