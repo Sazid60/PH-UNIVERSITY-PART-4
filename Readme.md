@@ -369,3 +369,47 @@ process.on('uncaughtException', () => {
 
 // console.log(x);
 ```
+
+## 14-7 How to do raw Searching14-7 How to do raw Searching and filtering
+
+- searchTerm is partial
+- Filter is exact match
+
+![alt text](image-3.png)
+
+- we will tell backend to search in specific field
+- in case of filter we will tell the exact field and the exact value
+
+![alt text](image-4.png)
+
+- we can do this since every one is giving a query
+
+- Searching using Search Term
+
+```ts
+const getAllStudentsFromDB = async (query: Record<string, unknown>) => {
+  // {email :{$regex : query.searchTerm, $option:i}}
+  // {presentAddress :{$regex : query.searchTerm, $option:i}}
+  // {'name.firstName' :{$regex : query.searchTerm, $option:i}}
+
+  let searchTerm = '';
+
+  if (query?.searchTerm) {
+    searchTerm = query.searchTerm as string;
+  }
+  const result = await Student.find({
+    $or: ['email', 'name.firstName', 'presentAddress'].map((field) => ({
+      [field]: { $regex: searchTerm, $options: 'i' },
+    })),
+  })
+    .populate('admissionSemester')
+    .populate({
+      path: 'academicDepartment',
+      populate: {
+        path: 'academicFaculty',
+      },
+    });
+  // nested populate is done since academic faculty inside academic department is still showing id
+  return result;
+};
+```
