@@ -12,16 +12,36 @@ const getAllStudentsFromDB = async (query: Record<string, unknown>) => {
   // {presentAddress :{$regex : query.searchTerm, $option:i}}
   // {'name.firstName' :{$regex : query.searchTerm, $option:i}}
 
+  console.log('Base Query :', query);
+
+  // making  a copy of the query so that original query do not change
+
+  const queryObj = { ...query };
+  const studentSearchableFields = ['email', 'name.firstName', 'presentAddress'];
   let searchTerm = '';
 
   if (query?.searchTerm) {
     searchTerm = query.searchTerm as string;
   }
-  const result = await Student.find({
-    $or: ['email', 'name.firstName', 'presentAddress'].map((field) => ({
+
+  // we are using chaining
+  const searchQuery = Student.find({
+    $or: studentSearchableFields.map((field) => ({
       [field]: { $regex: searchTerm, $options: 'i' },
     })),
-  })
+  });
+
+  // filtering
+  const excludeFields = ['searchTerm', 'sort', 'limit'];
+  excludeFields.forEach((el) => delete queryObj[el]);
+  // console.log({ query, queryObj });
+
+  // http://localhost:5000/api/v1/students?searchTerm=sazid&email=sazid@e.com
+  //  for sorting http://localhost:5000/api/v1/students?sort=-email this means descending order
+  // for limiting http://localhost:5000/api/v1/students?limit=1
+
+  const filterQuery = searchQuery
+    .find(queryObj)
     .populate('admissionSemester')
     .populate({
       path: 'academicDepartment',
@@ -30,7 +50,24 @@ const getAllStudentsFromDB = async (query: Record<string, unknown>) => {
       },
     });
   // nested populate is done since academic faculty inside academic department is still showing id
-  return result;
+
+  let sort = '-createdAt';
+
+  if (query.sort) {
+    sort = query.sort as string;
+  }
+
+  const sortQuery = filterQuery.sort(sort);
+
+  // limiting
+  let limit = 1;
+  if (query.limit) {
+    limit = query.limit;
+  }
+
+  const limitQuery = await sortQuery.limit(limit);
+
+  return limitQuery;
 };
 
 // get single student from db
