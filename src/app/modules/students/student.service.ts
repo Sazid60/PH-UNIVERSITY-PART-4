@@ -4,6 +4,8 @@ import AppError from '../../errors/AppError';
 import { User } from '../user/user.model';
 import httpStatus from 'http-status';
 import { TStudent } from './student.interface';
+import QueryBuilder from '../../builder/Querybuilder';
+import { studentSearchableFields } from './student.constant';
 
 // *******************************************************************
 // getting data service
@@ -11,93 +13,89 @@ const getAllStudentsFromDB = async (query: Record<string, unknown>) => {
   // {email :{$regex : query.searchTerm, $option:i}}
   // {presentAddress :{$regex : query.searchTerm, $option:i}}
   // {'name.firstName' :{$regex : query.searchTerm, $option:i}}
-
   // console.log('Base Query :', query);
-
   // making  a copy of the query so that original query do not change
-
-  const queryObj = { ...query };
-  const studentSearchableFields = ['email', 'name.firstName', 'presentAddress'];
-  let searchTerm = '';
-
-  if (query?.searchTerm) {
-    searchTerm = query.searchTerm as string;
-  }
-
-  // we are using chaining
-  const searchQuery = Student.find({
-    $or: studentSearchableFields.map((field) => ({
-      [field]: { $regex: searchTerm, $options: 'i' },
-    })),
-  });
-
-  // filtering
-  const excludeFields = ['searchTerm', 'sort', 'limit', 'page', 'fields'];
-  excludeFields.forEach((el) => delete queryObj[el]);
-  // console.log({ query, queryObj });
-
-  console.log({ query }, { queryObj });
-
+  // const queryObj = { ...query };
+  // const studentSearchableFields = ['email', 'name.firstName', 'presentAddress'];
+  // let searchTerm = '';
+  // if (query?.searchTerm) {
+  //   searchTerm = query.searchTerm as string;
+  // }
+  // // we are using chaining
+  // const searchQuery = Student.find({
+  //   $or: studentSearchableFields.map((field) => ({
+  //     [field]: { $regex: searchTerm, $options: 'i' },
+  //   })),
+  // });
+  // // filtering
+  // const excludeFields = ['searchTerm', 'sort', 'limit', 'page', 'fields'];
+  // excludeFields.forEach((el) => delete queryObj[el]);
+  // // console.log({ query, queryObj });
+  // console.log({ query }, { queryObj });
   // http://localhost:5000/api/v1/students?searchTerm=sazid&email=sazid@e.com
   //  for sorting http://localhost:5000/api/v1/students?sort=-email this means descending order
   // for limiting http://localhost:5000/api/v1/students?limit=1
   // for pagination http://localhost:5000/api/v1/students?page=1&limit=2
-
   // for field limiting
   // http://localhost:5000/api/v1/students?fields=name,email
-
-  const filterQuery = searchQuery
-    .find(queryObj)
-    .populate('admissionSemester')
-    .populate({
-      path: 'academicDepartment',
-      populate: {
-        path: 'academicFaculty',
-      },
-    });
+  // const filterQuery = searchQuery
+  //   .find(queryObj)
+  //   .populate('admissionSemester')
+  //   .populate({
+  //     path: 'academicDepartment',
+  //     populate: {
+  //       path: 'academicFaculty',
+  //     },
+  //   });
   // nested populate is done since academic faculty inside academic department is still showing id
-
-  let sort = '-createdAt';
-
-  if (query.sort) {
-    sort = query.sort as string;
-  }
-
-  const sortQuery = filterQuery.sort(sort);
-
-  let page = 1;
-  let skip = 0;
-  // limiting
-  let limit = 1;
-
-  if (query.limit) {
-    limit = Number(query.limit);
-  }
-
-  if (query.page) {
-    page = Number(query.page);
-    skip = (page - 1) * limit;
-  }
-
-  const paginateQuery = sortQuery.skip(skip);
-
-  const limitQuery = paginateQuery.limit(limit);
-
+  // let sort = '-createdAt';
+  // if (query.sort) {
+  //   sort = query.sort as string;
+  // }
+  // const sortQuery = filterQuery.sort(sort);
+  // let page = 1;
+  // let skip = 0;
+  // // limiting
+  // let limit = 1;
+  // if (query.limit) {
+  //   limit = Number(query.limit);
+  // }
+  // if (query.page) {
+  //   page = Number(query.page);
+  //   skip = (page - 1) * limit;
+  // }
+  // const paginateQuery = sortQuery.skip(skip);
+  // const limitQuery = paginateQuery.limit(limit);
   // field limiting
-  let fields = '-__v'; // this means - means skip this fields
+  // let fields = '-__v'; // this means - means skip this fields
+  // // http://localhost:5000/api/v1/students?fields=-name means it will show everything except name
+  // // fields:'name,email' so we have to convert it to fields:'name email'
+  // if (query.fields) {
+  //   fields = (query.fields as string).split(',').join(' ');
+  //   console.log({ fields });
+  // }
+  // const fieldQuery = await limitQuery.select(fields);
+  // return fieldQuery;
 
-  // http://localhost:5000/api/v1/students?fields=-name means it will show everything except name
+  const studentQuery = new QueryBuilder(
+    Student.find()
+      .populate('admissionSemester')
+      .populate({
+        path: 'academicDepartment',
+        populate: {
+          path: 'academicFaculty',
+        },
+      }),
+    query,
+  )
+    .search(studentSearchableFields)
+    .filter()
+    .sort()
+    .paginate()
+    .fields();
 
-  // fields:'name,email' so we have to convert it to fields:'name email'
-
-  if (query.fields) {
-    fields = (query.fields as string).split(',').join(' ');
-    console.log({ fields });
-  }
-
-  const fieldQuery = await limitQuery.select(fields);
-
-  return fieldQuery;
+  const result = await studentQuery.modelQuery;
+  return result;
 };
 
 // get single student from db
