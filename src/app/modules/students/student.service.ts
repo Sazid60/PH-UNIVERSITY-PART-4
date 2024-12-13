@@ -12,7 +12,7 @@ const getAllStudentsFromDB = async (query: Record<string, unknown>) => {
   // {presentAddress :{$regex : query.searchTerm, $option:i}}
   // {'name.firstName' :{$regex : query.searchTerm, $option:i}}
 
-  console.log('Base Query :', query);
+  // console.log('Base Query :', query);
 
   // making  a copy of the query so that original query do not change
 
@@ -32,13 +32,19 @@ const getAllStudentsFromDB = async (query: Record<string, unknown>) => {
   });
 
   // filtering
-  const excludeFields = ['searchTerm', 'sort', 'limit'];
+  const excludeFields = ['searchTerm', 'sort', 'limit', 'page', 'fields'];
   excludeFields.forEach((el) => delete queryObj[el]);
   // console.log({ query, queryObj });
+
+  console.log({ query }, { queryObj });
 
   // http://localhost:5000/api/v1/students?searchTerm=sazid&email=sazid@e.com
   //  for sorting http://localhost:5000/api/v1/students?sort=-email this means descending order
   // for limiting http://localhost:5000/api/v1/students?limit=1
+  // for pagination http://localhost:5000/api/v1/students?page=1&limit=2
+
+  // for field limiting
+  // http://localhost:5000/api/v1/students?fields=name,email
 
   const filterQuery = searchQuery
     .find(queryObj)
@@ -59,15 +65,39 @@ const getAllStudentsFromDB = async (query: Record<string, unknown>) => {
 
   const sortQuery = filterQuery.sort(sort);
 
+  let page = 1;
+  let skip = 0;
   // limiting
   let limit = 1;
+
   if (query.limit) {
-    limit = query.limit;
+    limit = Number(query.limit);
   }
 
-  const limitQuery = await sortQuery.limit(limit);
+  if (query.page) {
+    page = Number(query.page);
+    skip = (page - 1) * limit;
+  }
 
-  return limitQuery;
+  const paginateQuery = sortQuery.skip(skip);
+
+  const limitQuery = paginateQuery.limit(limit);
+
+  // field limiting
+  let fields = '-__v'; // this means - means skip this fields
+
+  // http://localhost:5000/api/v1/students?fields=-name means it will show everything except name
+
+  // fields:'name,email' so we have to convert it to fields:'name email'
+
+  if (query.fields) {
+    fields = (query.fields as string).split(',').join(' ');
+    console.log({ fields });
+  }
+
+  const fieldQuery = await limitQuery.select(fields);
+
+  return fieldQuery;
 };
 
 // get single student from db

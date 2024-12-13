@@ -39,7 +39,7 @@ export const generateStudentId = async (payload: TAcademicSemester) => {
     lastStudentSemesterCode === currentSemesterCode &&
     lastStudentYear === currentYear
   ) {
-    currentId = lastStudentId.substring(6); //00001
+    currentId = lastStudentId.substring(6); //0001
   }
   let incrementId = (Number(currentId) + 1).toString().padStart(4, '0');
   incrementId = `${payload.year}${payload.code}${incrementId}`;

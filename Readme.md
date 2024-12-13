@@ -370,7 +370,7 @@ process.on('uncaughtException', () => {
 // console.log(x);
 ```
 
-## 14-7 How to do raw Searching14-7 How to do raw Searching and filtering
+## 14-7 How to do raw Searching and filtering
 
 - searchTerm is partial
 - Filter is exact match
@@ -470,8 +470,13 @@ const getAllStudentsFromDB = async (query: Record<string, unknown>) => {
 
   const sortQuery = filterQuery.sort(sort);
 
+  let page = 1;
   // limiting
   let limit = 1;
+
+  if (query.page) {
+    page = Number(query.page);
+  }
   if (query.limit) {
     limit = query.limit;
   }
@@ -480,4 +485,59 @@ const getAllStudentsFromDB = async (query: Record<string, unknown>) => {
 
   return limitQuery;
 };
+```
+
+## 14-9 How to do pagination and field limiting
+
+- Limit is related to pagination
+- We Will take the page and limit value from frontend
+
+![alt text](<WhatsApp Image 2024-12-13 at 18.15.06_b83a3731.jpg>)
+
+![alt text](<WhatsApp Image 2024-12-13 at 18.15.48_88eac8db.jpg>)
+
+![alt text](<WhatsApp Image 2024-12-13 at 18.16.03_b17022bf.jpg>)
+
+![alt text](<WhatsApp Image 2024-12-13 at 18.16.16_d80b96e1.jpg>)
+
+- pagination
+
+```ts
+let page = 1;
+let skip = 0;
+// limiting
+let limit = 1;
+
+if (query.limit) {
+  limit = Number(query.limit);
+}
+
+if (query.page) {
+  page = Number(query.page);
+  skip = (page - 1) * limit;
+}
+
+const paginateQuery = sortQuery.skip(skip);
+
+const limitQuery = await paginateQuery.limit(limit);
+
+return limitQuery;
+```
+
+- Field Filtering means i want to see only the specific fields
+
+```ts
+// field limiting
+let fields = '-__v'; // this means - means skip this fields
+
+// fields:'name,email' so we have to convert it to fields:'name email'
+
+if (query.fields) {
+  fields = (query.fields as string).split(',').join(' ');
+  console.log({ fields });
+}
+
+const fieldQuery = await limitQuery.select(fields);
+
+return fieldQuery;
 ```
