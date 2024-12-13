@@ -754,3 +754,7 @@ const getAllStudentsFromDB = async (query: Record<string, unknown>) => {
 ```
 
 ![alt text](<WhatsApp Image 2024-12-13 at 18.29.22_9a6143a5.jpg>)
+
+![alt text](<WhatsApp Image 2024-12-13 at 21.16.55_633f8d96.jpg>)
+
+![alt text](<WhatsApp Image 2024-12-13 at 21.53.42_602af782.jpg>)
